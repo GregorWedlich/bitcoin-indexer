@@ -157,6 +157,13 @@ pub async fn start_bitcoin_indexer(
             ctx,
         )
         .await?;
+
+        // FIX: Wait for indexer thread to process downloaded blocks before checking chain tip.
+        // This prevents a race condition where BlockProcessor terminates before indexer catches up,
+        // causing ZMQ streaming to never start.
+        try_info!(ctx, "Waiting for indexer to process blocks...");
+        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+
         // Bitcoind may have advanced while we were indexing, check its chain tip again.
         bitcoind_chain_tip = bitcoind_get_chain_tip(&config.bitcoind, ctx);
     }
