@@ -135,7 +135,7 @@ pub(crate) async fn start_block_download_pipeline(
                         cloned_ctx,
                         "Pipeline successfully sent {blocks_processed} blocks to processor"
                     );
-                    let _ = block_processor_commands_tx.send(BlockProcessorCommand::Terminate);
+                    // let _ = block_processor_commands_tx.send(BlockProcessorCommand::Terminate);
                     break;
                 }
 
@@ -292,7 +292,7 @@ pub(crate) async fn start_block_download_pipeline(
 
     try_debug!(ctx, "Pipeline successfully terminated");
 
-    wait_for_thread_finish(&mut block_processor.thread_handle)?;
+    // wait_for_thread_finish(&mut block_processor.thread_handle)?;
 
     let _ = block_dispatcher_tx.send(None);
 
