@@ -107,6 +107,8 @@ pub(crate) async fn start_block_download_pipeline(
                             block_data,
                             compressed_block,
                         )));
+                    } else {
+                        break;
                     }
                 }
                 try_info!(moved_ctx, "BlockCompressor[{thread_index}] thread complete");

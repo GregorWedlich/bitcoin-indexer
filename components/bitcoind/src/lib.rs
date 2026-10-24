@@ -158,11 +158,24 @@ pub async fn start_bitcoin_indexer(
         )
         .await?;
 
-        // FIX: Wait for indexer thread to process downloaded blocks before checking chain tip.
-        // This prevents a race condition where BlockProcessor terminates before indexer catches up,
-        // causing ZMQ streaming to never start.
-        try_info!(ctx, "Waiting for indexer to process blocks...");
-        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+        try_info!(
+            ctx,
+            "Waiting for block pool to reach block #{}",
+            bitcoind_chain_tip.index
+        );
+        while !abort_signal.load(Ordering::SeqCst)
+            && canonical_chain_tip_height(&block_pool)
+                .is_none_or(|height| height < bitcoind_chain_tip.index)
+        {
+            if block_processor
+                .thread_handle
+                .as_ref()
+                .is_some_and(JoinHandle::is_finished)
+            {
+                return Err("BlockProcessor stopped before reaching chain tip".into());
+            }
+            tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+        }
 
         // Bitcoind may have advanced while we were indexing, check its chain tip again.
         bitcoind_chain_tip = bitcoind_get_chain_tip(&config.bitcoind, ctx);
@@ -187,4 +200,12 @@ pub async fn start_bitcoin_indexer(
     wait_for_thread_finish(&mut indexer.thread_handle)?;
 
     Ok(())
+}
+
+fn canonical_chain_tip_height(block_pool: &Mutex<BlockPool>) -> Option<u64> {
+    block_pool
+        .lock()
+        .unwrap()
+        .canonical_chain_tip()
+        .map(|chain_tip| chain_tip.index)
 }
