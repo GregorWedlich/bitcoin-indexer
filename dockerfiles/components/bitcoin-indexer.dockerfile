@@ -1,4 +1,4 @@
-FROM rust:bullseye AS build
+FROM rust:bookworm AS build
 
 WORKDIR /src
 
@@ -6,7 +6,7 @@ RUN apt-get update && \
     apt-get install -y \
     wget && \
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
-    echo "deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-18 main" >> /etc/apt/sources.list.d/llvm.list && \
+    echo "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-18 main" >> /etc/apt/sources.list.d/llvm.list && \
     apt-get update && \
     apt-get install -y \
     pkg-config \
@@ -34,7 +34,7 @@ COPY ./migrations /src/migrations
 RUN cargo build --features release --release
 RUN cp /src/target/release/bitcoin-indexer /out
 
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 # Install runtime dependencies for LLVM/Clang 18 and other necessary libs
 RUN apt-get update && \
@@ -43,7 +43,7 @@ RUN apt-get update && \
     ca-certificates \
     wget && \
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
-    echo "deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-18 main" >> /etc/apt/sources.list.d/llvm.list && \
+    echo "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-18 main" >> /etc/apt/sources.list.d/llvm.list && \
     apt-get update && \
     apt-get install -y \
     pkg-config \

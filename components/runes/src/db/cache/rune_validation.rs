@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use bitcoin::{Script, Transaction, Witness};
+use bitcoin::{Script, ScriptBuf, Transaction, Witness};
 use bitcoind::{
     bitcoincore_rpc::{self, Client as BitcoinRPCClient},
     utils::{
@@ -82,11 +82,13 @@ pub async fn rune_etching_has_valid_commit(
             let commit_tx_info = bitcoin_get_raw_transaction(bitcoin_client, ctx, &txid)?;
 
             // Verify the spent output is a taproot (P2TR) output
-            let taproot = commit_tx_info.vout[input.previous_output.vout as usize]
-                .script_pub_key
-                .script()
-                .map_err(|e| format!("can't get script: {e}"))?
-                .is_p2tr();
+            let taproot = ScriptBuf::from_hex(
+                &commit_tx_info.vout[input.previous_output.vout as usize]
+                    .script_pub_key
+                    .hex,
+            )
+            .map_err(|e| format!("can't get script: {e}"))?
+            .is_p2tr();
 
             if !taproot {
                 continue;

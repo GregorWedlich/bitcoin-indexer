@@ -4,10 +4,27 @@ use bitcoincore_rpc::{
     bitcoin::{BlockHash, Txid},
     Auth, Client, RpcApi,
 };
-use bitcoincore_rpc_json::GetRawTransactionResult;
 use config::BitcoindConfig;
+use serde::{Deserialize, Serialize};
 
 use crate::{try_error, try_info, types::BlockIdentifier, utils::Context};
+
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+pub struct ScriptPubKeyHex {
+    pub hex: String,
+}
+
+#[derive(Deserialize)]
+pub struct RawTransactionOutput {
+    #[serde(rename = "scriptPubKey")]
+    pub script_pub_key: ScriptPubKeyHex,
+}
+
+#[derive(Deserialize)]
+pub struct RawTransactionInfo {
+    pub blockhash: Option<BlockHash>,
+    pub vout: Vec<RawTransactionOutput>,
+}
 
 pub fn bitcoind_get_client(config: &BitcoindConfig, ctx: &Context) -> Client {
     loop {
@@ -71,9 +88,12 @@ pub fn bitcoin_get_raw_transaction(
     bitcoin_rpc: &Client,
     ctx: &Context,
     txid: &Txid,
-) -> Result<GetRawTransactionResult, String> {
+) -> Result<RawTransactionInfo, String> {
     bitcoin_rpc
-        .get_raw_transaction_info(txid, None)
+        .call(
+            "getrawtransaction",
+            &[serde_json::json!(txid), serde_json::json!(true)],
+        )
         .map_err(|e| {
             try_error!(ctx, "bitcoind: Unable to get raw transaction: {e}",);
             e.to_string()

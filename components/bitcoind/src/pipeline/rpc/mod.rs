@@ -6,7 +6,6 @@ use bitcoincore_rpc::{
     bitcoin::{self, hashes::Hash, Amount, BlockHash},
     jsonrpc::error::RpcError,
 };
-use bitcoincore_rpc_json::GetRawTransactionResultVoutScriptPubKey;
 use config::BitcoindConfig;
 use hiro_system_kit::slog;
 use reqwest::Client as HttpClient;
@@ -19,7 +18,7 @@ use crate::{
         BitcoinBlockData, BitcoinBlockMetadata, BitcoinNetwork, BitcoinTransactionData,
         BitcoinTransactionMetadata, BlockHeader, BlockIdentifier, TransactionIdentifier,
     },
-    utils::Context,
+    utils::{bitcoind::ScriptPubKeyHex, Context},
 };
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
@@ -112,7 +111,7 @@ pub(crate) struct BitcoinTransactionOutputFullBreakdown {
     #[serde(with = "bitcoin::amount::serde::as_btc")]
     pub value: Amount,
     pub n: u32,
-    pub script_pub_key: GetRawTransactionResultVoutScriptPubKey,
+    pub script_pub_key: ScriptPubKeyHex,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -430,7 +429,7 @@ pub(crate) fn standardize_bitcoin_block(
             sats_out += value;
             outputs.push(TxOut {
                 value,
-                script_pubkey: format!("0x{}", hex::encode(&output.script_pub_key.hex)),
+                script_pubkey: format!("0x{}", output.script_pub_key.hex),
             });
         }
 
